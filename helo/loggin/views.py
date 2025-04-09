@@ -1,55 +1,35 @@
-# accounts/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from .forms import RegisterForm, LoginForm, EmployeeUpdateForm
-from .models import CustomUser
+from .models import User
+from .forms import UserForm
 
-def register_view(request):
+def user_list(request):
+    users = User.objects.all()
+    return render(request, 'accounts/user_list.html', {'users': users})
+
+def user_create(request):
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        form = UserForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('login')
+            return redirect('user_list')
     else:
-        form = RegisterForm()
-    return render(request, 'accounts/register.html', {'form': form})
+        form = UserForm()
+    return render(request, 'accounts/user_form.html', {'form': form})
 
-def login_view(request):
+def user_update(request, pk):
+    user = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
-        form = LoginForm(request, data=request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect('dashboard')
-    else:
-        form = LoginForm()
-    return render(request, 'accounts/login.html', {'form': form})
-
-def logout_view(request):
-    logout(request)
-    return redirect('login')
-
-@login_required
-def dashboard(request):
-    employees = CustomUser.objects.all()
-    return render(request, 'accounts/dashboard.html', {'employees': employees})
-
-@login_required
-def update_employee(request, pk):
-    employee = get_object_or_404(CustomUser, pk=pk)
-    if request.method == 'POST':
-        form = EmployeeUpdateForm(request.POST, instance=employee)
+        form = UserForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
+            return redirect('user_list')
     else:
-        form = EmployeeUpdateForm(instance=employee)
-    return render(request, 'accounts/update_employee.html', {'form': form})
+        form = UserForm(instance=user)
+    return render(request, 'accounts/user_form.html', {'form': form})
 
-@login_required
-def delete_employee(request, pk):
-    employee = get_object_or_404(CustomUser, pk=pk)
+def user_delete(request, pk):
+    user = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
-        employee.delete()
-        return redirect('dashboard')
-    return render(request, 'accounts/delete_employee.html', {'employee': employee})
+        user.delete()
+        return redirect('user_list')
+    return render(request, 'accounts/user_confirm_delete.html', {'user': user})
