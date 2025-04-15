@@ -1,40 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>All Users</title>
+  <title>User List</title>
+  <style>
+    table, th, td {
+      border: 1px solid #333;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h2>All Users</h2>
-  <a href="{% url 'user_create' %}">Add New User</a>
-  <table border="1" cellpadding="10" cellspacing="0">
+  <h2>User List</h2>
+  <table>
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Role</th>
+        <th>ID</th>
+        <th>User Name</th>
         <th>Email</th>
+        <th>Role</th>
+        <th>Department</th>
+        <th>Employee ID</th>
+        <th>Designation</th>
         <th>Mobile</th>
-        <th>Actions</th>
+        <th>Active</th>
+        <th>Locked</th>
+        <th>Remarks1</th>
+        <th>Remarks2</th>
       </tr>
     </thead>
-    <tbody>
-      {% for user in users %}
-      <tr>
-        <td>{{ user.user_name }}</td>
-        <td>{{ user.user_role }}</td>
-        <td>{{ user.email_id }}</td>
-        <td>{{ user.mobile_number }}</td>
-        <td>
-          <a href="{% url 'user_update' user.pk %}">Edit</a> |
-          <a href="{% url 'user_delete' user.pk %}">Delete</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5">No users found.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+    <tbody id="userTableBody"></tbody>
   </table>
+
+  <script>
+    async function fetchUsers() {
+      const res = await fetch("/api/users/");
+      const users = await res.json();
+      const tbody = document.getElementById("userTableBody");
+
+      tbody.innerHTML = users.map(user => `
+        <tr>
+          <td>${user.id}</td>
+          <td>${user.user_name}</td>
+          <td>${user.email_id}</td>
+          <td>${user.user_role}</td>
+          <td>${user.department}</td>
+          <td>${user.employee_id}</td>
+          <td>${user.designation}</td>
+          <td>${user.mobile_number}</td>
+          <td>${user.is_active ? "Yes" : "No"}</td>
+          <td>${user.is_locked ? "Yes" : "No"}</td>
+          <td>${user.remarks1 || ""}</td>
+          <td>${user.remarks2 || ""}</td>
+        </tr>
+      `).join("");
+      
+    }
+
+    fetchUsers();
+  </script>
 </body>
 </html>

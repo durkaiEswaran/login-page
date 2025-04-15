@@ -1,20 +1,106 @@
-<h2>Employee Dashboard</h2>
-<p><a href="{% url 'logout' %}">Logout</a></p>
-<table border="1">
-  <tr>
-    <th>Username</th><th>Employee Name</th><th>ID</th><th>Department</th><th>Email</th><th>Actions</th>
-  </tr>
-  {% for employee in employees %}
-    <tr>
-      <td>{{ employee.username }}</td>
-      <td>{{ employee.employee_name }}</td>
-      <td>{{ employee.employee_id }}</td>
-      <td>{{ employee.department }}</td>
-      <td>{{ employee.email }}</td>
-      <td>
-        <a href="{% url 'update_employee' employee.pk %}">Edit</a> |
-        <a href="{% url 'delete_employee' employee.pk %}">Delete</a>
-      </td>
-    </tr>
-  {% endfor %}
-</table>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Dashboard</title>
+</head>
+<body>
+  <h2>User Management</h2>
+  <div id="userList"></div>
+
+  <h3>Add New User</h3>
+  <form id="userForm">
+    <input type="text" name="user_name" placeholder="Name" required />
+    <input type="email" name="email_id" placeholder="Email" required />
+    <input type="text" name="user_role" placeholder="Role" required />
+    <input type="text" name="department" placeholder="Department" required />
+    <input type="text" name="employee_id" placeholder="Employee ID" required />
+    <input type="text" name="designation" placeholder="Designation" required />
+    <input type="text" name="mobile_number" placeholder="Mobile Number" required />
+    <button type="submit">Add User</button>
+  </form>
+
+  <script>
+    // CSRF token
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    const csrftoken = getCookie("csrftoken");
+
+    // Fetch and Display Users
+    async function fetchUsers() {
+      const res = await fetch("/api/users/");
+      const users = await res.json();
+      const list = document.getElementById("userList");
+      list.innerHTML = users.map(u => `
+        <div>
+          <strong>${u.user_name}</strong> (${u.email_id}) - ${u.user_role}
+          <button onclick="deleteUser(${u.id})">Delete</button>
+          <button onclick='editUser(${JSON.stringify(u)})'>Edit</button>
+        </div>
+      `).join("");
+    }
+
+    // Add User
+    document.getElementById("userForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const data = Object.fromEntries(form.entries());
+
+      const res = await fetch("/api/users/create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        e.target.reset();
+        fetchUsers();
+      }
+    });
+
+    // Delete User
+    async function deleteUser(id) {
+      const res = await fetch(`/api/users/delete/${id}/`, {
+        method: "DELETE",
+        headers: { "X-CSRFToken": csrftoken }
+      });
+      if (res.ok) fetchUsers();
+    }
+
+    // Edit User (Update)
+    async function editUser(user) {
+      const newName = prompt("Enter new name:", user.user_name);
+      if (newName && newName !== user.user_name) {
+        user.user_name = newName;
+        await fetch(`/api/users/update/${user.id}/`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken
+          },
+          body: JSON.stringify(user)
+        });
+        fetchUsers();
+      }
+    }
+
+    // Initial load
+    fetchUsers();
+  </script>
+</body>
+</html>
